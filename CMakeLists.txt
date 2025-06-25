@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 3.30)
 MESSAGE("\nConfiguring hypercine...\n")
 
 PROJECT(hypercine)
@@ -57,13 +57,41 @@ SET (HYPERCINE_HEADERS
  ./src/hypercine.h
 )
 
-add_library(hypercine ${HYPERCINE_SOURCES} ${HYPERCINE_HEADERS})
+add_library(hypercine ${HYPERCINE_SOURCES})
 target_compile_definitions(hypercine PRIVATE -D HYPERCINE_LIB_EXPORTS_MODE)
-IF(WIN32)
-  install(TARGETS hypercine DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-ELSE()
-  install(TARGETS hypercine DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-ENDIF()
+target_sources(
+  ${PROJECT_NAME}
+  PUBLIC FILE_SET HEADERS
+  BASE_DIRS ${CMAKE_CURRENT_LIST_DIR}/src
+  FILES ${HYPERCINE_HEADERS}
+)
+
+
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+set(CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
+
+install(
+  TARGETS  ${PROJECT_NAME}
+  EXPORT   ${PROJECT_NAME}Targets
+  FILE_SET HEADERS
+)
+install(
+  EXPORT ${PROJECT_NAME}Targets
+  NAMESPACE hypercine::
+  DESTINATION ${CONFIG_INSTALL_DIR}
+)
+
+configure_package_config_file(
+  ${CMAKE_SOURCE_DIR}/config.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+  INSTALL_DESTINATION ${CONFIG_INSTALL_DIR}
+)
+install(
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+  DESTINATION ${CONFIG_INSTALL_DIR}
+)
 
 IF(DEFINED OpenCV_DIR)
   message(STATUS "Looking for OpenCV in dir: ${OpenCV_DIR}")
@@ -82,8 +110,8 @@ IF(DEFINED OpenCV_DIR)
   # only add tests and tools for OpenCV builds
   # also only add tests and tools if BUILD_TESTS is defined in the do cmake file
   IF(BUILD_TESTS)
-  add_subdirectory(tests)
-  add_subdirectory(tools)
-  add_subdirectory(performance)
+    add_subdirectory(tests)
+    add_subdirectory(tools)
+    add_subdirectory(performance)
   ENDIF()
 ENDIF()
