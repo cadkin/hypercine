@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.30)
+cmake_minimum_required(VERSION 3.23)
 MESSAGE("\nConfiguring hypercine...\n")
 
-PROJECT(hypercine)
+PROJECT(hypercine LANGUAGES CXX C)
 
 IF(WIN32)
   IF(NOT BUILD_SHARED_LIBS)
@@ -22,6 +22,8 @@ ELSE()
   MESSAGE(STATUS "Debugging messages are OFF")
 ENDIF()
 
+add_library(hypercine)
+
 # base data type:
 if(HYPERCINE_USE_DOUBLE_STORAGE OR HYPERCINE_USE_FLOAT_STORAGE OR HYPERCINE_USE_INT_STORAGE)
 else()
@@ -37,15 +39,15 @@ if(HYPERCINE_USE_FLOAT_STORAGE AND HYPERCINE_USE_INT_STORAGE)
   message(FATAL_ERROR "Cannot specify both HYPERCINE_USE_FLOAT_STORAGE and HYPERCINE_USE_INT_STORAGE")
 endif()
 if(HYPERCINE_USE_DOUBLE_STORAGE)
-  ADD_DEFINITIONS(-DUSE_DOUBLE_STORAGE=1)
+  target_compile_definitions(hypercine PUBLIC USE_DOUBLE_STORAGE DICE_USE_DOUBLE)
   MESSAGE(STATUS "Storage type will be: DOUBLE")
 endif()
 if(HYPERCINE_USE_FLOAT_STORAGE)
-  ADD_DEFINITIONS(-DUSE_FLOAT_STORAGE=1)
+  target_compile_definitions(hypercine PUBLIC USE_FLOAT_STORAGE DICE_USE_FLOAT)
   MESSAGE(STATUS "Storage type will be: FLOAT")
 endif()
 if(HYPERCINE_USE_INT_STORAGE)
-  ADD_DEFINITIONS(-DUSE_INT_STORAGE=1)
+  target_compile_definitions(hypercine PUBLIC USE_INT_STORAGE DICE_USE_INT)
   MESSAGE(STATUS "Storage type will be: INT (uint16_t or unsigned short)")
 endif()
 
@@ -57,15 +59,17 @@ SET (HYPERCINE_HEADERS
  ./src/hypercine.h
 )
 
-add_library(hypercine ${HYPERCINE_SOURCES})
-target_compile_definitions(hypercine PRIVATE -D HYPERCINE_LIB_EXPORTS_MODE)
+target_compile_definitions(hypercine PRIVATE HYPERCINE_LIB_EXPORTS_MODE)
+target_sources(
+    ${PROJECT_NAME}
+    PRIVATE ${HYPERCINE_SOURCES}
+)
 target_sources(
   ${PROJECT_NAME}
   PUBLIC FILE_SET HEADERS
   BASE_DIRS ${CMAKE_CURRENT_LIST_DIR}/src
   FILES ${HYPERCINE_HEADERS}
 )
-
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
